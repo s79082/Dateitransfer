@@ -1,4 +1,4 @@
-package rnBeleg;
+//package rnBeleg;
 
 import java.io.*;
 import java.net.*;
@@ -17,7 +17,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import rnBeleg.ServerUdp;
+//import rnBeleg.ServerUdp;
+//import static ServerUdp;
 
 public class ClientUdp {
 
@@ -28,7 +29,8 @@ public class ClientUdp {
 
 
     public static void main(String[] args) throws Exception {
-        String filename = "test4.txt";
+        String filename = "test1.txt";
+	String filepath;
 
         int port = 1024;
         String host = "localhost";
@@ -43,7 +45,7 @@ public class ClientUdp {
 
         // setting up input stream
         //File file = new File("U:\\RN\\rnBeleg\\" + filename);
-        File file = new File("/user/profile/active/ia18/s79082/RN/rnBeleg/	" + filename);
+        File file = new File("/home/moritz/Dateitransfer/src/" + filename);
 
         FileInputStream fis = new FileInputStream(file);
 
@@ -83,7 +85,7 @@ public class ClientUdp {
             remaining_data = Arrays.copyOfRange(buffer, 0, read);
             //ByteBuffer tmp_buff = ByteBuffer.wrap(remaining_data);
 
-            crc.update(remaining_data);
+            crc.update(remaining_data, 0, remaining_data.length);
 
             //ServerUdp.printArray(remaining_data);
 

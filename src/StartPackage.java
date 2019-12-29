@@ -1,4 +1,4 @@
-package rnBeleg;
+//package rnBeleg;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

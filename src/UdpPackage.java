@@ -1,4 +1,4 @@
-package rnBeleg;
+//package rnBeleg;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;

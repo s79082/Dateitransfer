@@ -1,4 +1,4 @@
-package rnBeleg;
+//package rnBeleg;
 
 import java.io.*;
 import java.net.*;
@@ -95,7 +95,7 @@ public class ServerUdp
          byte[] data = Arrays.copyOfRange(tmp, (int) DATAPACKAGE_HEADER_SIZE, (int) (DATAPACKAGE_HEADER_SIZE + datasize));
          //ByteBuffer tmp_buff = ByteBuffer.wrap(data);
          
-         crc.update(data);
+         crc.update(data, 0, data.length);
 
 
          if (lastPackage){

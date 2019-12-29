@@ -1,4 +1,4 @@
-package rnBeleg;
+//package rnBeleg;
 
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
@@ -6,8 +6,7 @@ import java.util.zip.Checksum;
 
 public class DataPackage extends UdpPackage
 {
-    public static final int PAYLOAD_SIZE = 512;
-
+    public static final int PAYLOAD_SIZE = 1024;
 
     byte packageId;
     public byte[] data;
