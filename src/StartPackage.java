@@ -9,7 +9,7 @@ import java.util.zip.Checksum;
 public class StartPackage extends UdpPackage
 {
     byte packageId;
-    static String marker = "START";
+    static String marker = "Start";
 
     long fileLength;
     short fileNameLength;
@@ -39,7 +39,7 @@ public class StartPackage extends UdpPackage
     public byte[] getBytes()
     {
 
-        byte[] tmp = new byte[this.size];
+        byte[] tmp = new byte[this.getSize()];
 
         ByteBuffer buff = ByteBuffer.wrap(tmp);
 
@@ -71,7 +71,7 @@ public class StartPackage extends UdpPackage
         buff.put(this.fileName);
 
         CRC32 crc = new CRC32();
-        crc.update(buff);
+        crc.update(buff.array());
 
         return (int) crc.getValue();
         

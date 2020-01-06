@@ -26,17 +26,18 @@ public class ClientUdp {
     private static final int AVERAGE_DELAY = 100; // milliseconds
     private static long returnTime;
     private static int returnSeq;
+    private static final int SOCKET_TIMEOUT = 2000; 
 
 
     public static void main(String[] args) throws Exception {
         String filename = "test1.txt";
-	String filepath;
+	    String filepath = "U:/RN/rnBeleg/Dateitransfer/bin/";
 
-        int port = 1024;
-        String host = "localhost";
+        int port = 3333;
+        String host = "idefix.informatik.htw-dresden.de";
 
         DatagramSocket socket = new DatagramSocket();
-        socket.setSoTimeout(1000);
+        socket.setSoTimeout(SOCKET_TIMEOUT);
         InetAddress serverAddress = InetAddress.getByName(host);
         Checksum crc = new CRC32();
         long checksum;
@@ -45,7 +46,7 @@ public class ClientUdp {
 
         // setting up input stream
         //File file = new File("U:\\RN\\rnBeleg\\" + filename);
-        File file = new File("/home/moritz/Dateitransfer/src/" + filename);
+        File file = new File(filepath+ filename);
 
         FileInputStream fis = new FileInputStream(file);
 
@@ -54,11 +55,30 @@ public class ClientUdp {
         short fileNameLength = (short) filename.length();
 
         // send start packet
-        StartPackage sp = new StartPackage((byte) 1, filename.getBytes(), fileLength);
-        
-        sp.send(socket, serverAddress, port);
+        StartPackage sp = new StartPackage((byte) 0, filename.getBytes(), fileLength);
 
+        ServerUdp.printArray(sp.getBytes());
+
+        ByteBuffer buff = ByteBuffer.allocate(27);
+
+        // byteorder ala protocoll
+        buff.putShort((short)1);
+        buff.put((byte)0);
+        buff.put(StartPackage.marker.getBytes());
+        buff.putLong(fileLength);
+        buff.putShort(fileNameLength);
+        buff.put(filename.getBytes());
+
+        crc.update(buff.array());
+        System.out.println(crc.getValue());
+        crc.reset();
+
+        System.out.println(sp.calculateChecksum());
+        //ServerUdp.printArray(sp.calculateChecksum().getBytes());
         
+        //sp.send(socket, serverAddress, port);
+
+        send_check(sp, socket, serverAddress, port,(byte) 0);
         //ByteBuffer buff_alldata = ByteBuffer.allocate(DataPackage.PAYLOAD_SIZE);
 
         // reading the file into buffer
@@ -122,6 +142,45 @@ public class ClientUdp {
     // sends pack via socket to adress and port. Waits for a ConfirmationPackage and checks ACK with pid. Repeat 10 times
     public static boolean send_check(UdpPackage pack, DatagramSocket socket, InetAddress adress, int port, byte pid) throws Exception
     {
+
+        int n_try = 0, received_pid;
+        DatagramPacket response = new DatagramPacket(new byte[3], 3);
+
+        while (n_try <= 9)
+        {
+            pack.send(socket, adress, port);
+            
+            try 
+            {
+                socket.receive(response);
+            }
+            catch (SocketTimeoutException e)
+            {
+                System.out.println("try nr "+(n_try + 1)+ " failed: received socket timeout (" + SOCKET_TIMEOUT+"ms)");
+                n_try++;
+
+                // jump to next try
+                continue;
+            }
+            // ack is last byte 
+            if ((received_pid = response.getData()[2]) == pid) 
+            {
+                // correct ACK was received
+                System.out.println("received correct ACK");
+                return true;
+            }
+            else
+            {
+                System.out.println("try nr "+(n_try + 1)+ " failed: received incorrect ACK (expected: " + pid + ", received: "+received_pid + ")");
+                n_try++;
+            }
+        }
+
+        if (n_try >= 9)
+            return false;
+        return true;
+
+/*
         int i;
         for (i = 1; i <= 10; i++) 
         {
@@ -140,6 +199,7 @@ public class ClientUdp {
             }
         }
         return false;    
+        */
     }
 }
    

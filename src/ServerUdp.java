@@ -24,6 +24,9 @@ public class ServerUdp
       int port = 1024;
       long fileLength;
       long actual_fileLegth = 0;
+      String file_name;
+      int file_name_length;
+      ByteBuffer data_buf;
 
       // We expect a StartPackage first
       // no futher processing without 
@@ -46,11 +49,36 @@ public class ServerUdp
       printArray(request.getData());
 
       Checksum crc = new CRC32();
-      //crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, request.getData().length - Long.BYTES)));
+      crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, request.getData().length - Integer.BYTES)));
       printArray(ByteBuffer.allocate(4).putInt((int) crc.getValue()).array());
 
-      fileLength = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 8, 8 + 8)).getLong();
+      crc.reset();
+
+      data_buf = ByteBuffer.wrap(request.getData());
+
+      //fileLength = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 8, 8 + 8)).getLong();
+
+      fileLength = data_buf.getLong(8);
+
+      System.out.println("filelength: " + fileLength);
+
       long remaining_bytes = fileLength;
+
+      //file_name_length = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 16, 16 + 2)).getChar();
+      file_name_length = data_buf.getChar(16);
+
+      System.out.println("filenamelength: " + file_name_length);
+
+      byte[] file_name_bytes = new byte[file_name_length];
+
+      for (int idx = 18; idx < (18 + file_name_length); idx++){
+         file_name_bytes[idx - 18] = data_buf.get(idx);
+      }
+      //data_buf.get(file_name_bytes, 0, file_name_length);
+
+      file_name = new String(file_name_bytes, "UTF-8");
+
+      System.out.println("filename: " + file_name);
 
       // calculate client data
       InetAddress clientHost = request.getAddress();
