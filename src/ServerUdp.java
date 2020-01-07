@@ -18,7 +18,7 @@ public class ServerUdp
    private static final int AVERAGE_DELAY = 100;  // milliseconds
    public static final long DATAPACKAGE_HEADER_SIZE = 3;
 
-   public static void main(String[] args) throws Exception
+   public void main(String[] args) throws Exception
    {
 
       int port = 1024;
@@ -47,6 +47,14 @@ public class ServerUdp
       System.out.println("Start package received!");
       System.out.println("Start package bytes:");
       printArray(request.getData());
+
+      // calculate client data
+      InetAddress clientHost = request.getAddress();
+      int clientPort = request.getPort();
+
+      // ack start package
+      ConfirmationPackage confirm = new ConfirmationPackage((byte) 0);
+      confirm.send(socket, clientHost, clientPort);
 
       Checksum crc = new CRC32();
       crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, request.getData().length - Integer.BYTES)));
@@ -80,9 +88,7 @@ public class ServerUdp
 
       System.out.println("filename: " + file_name);
 
-      // calculate client data
-      InetAddress clientHost = request.getAddress();
-      int clientPort = request.getPort();
+      
 
       boolean lastPackage = false;
       boolean CRCcorrect = false;
@@ -99,7 +105,7 @@ public class ServerUdp
          {
             // if the incoming data has equal or less bytes 
             // the receiving datagramm should also only hold this amount of bytes
-            datasize =  remaining_bytes;
+            datasize = remaining_bytes;
 
             // this is the last Package to be received. It will have an 4 byte CRC
             datagramm_size += 4;
@@ -121,6 +127,7 @@ public class ServerUdp
 
          // last parameter is exclusive
          byte[] data = Arrays.copyOfRange(tmp, (int) DATAPACKAGE_HEADER_SIZE, (int) (DATAPACKAGE_HEADER_SIZE + datasize));
+         //printArray(data);
          //ByteBuffer tmp_buff = ByteBuffer.wrap(data);
          
          crc.update(data, 0, data.length);
@@ -148,6 +155,8 @@ public class ServerUdp
          System.out.println("received bytes: "+ actual_fileLegth);
          System.out.println("data: ");
          printArray(data);
+         
+            
          
          DatagramPacket response = new DatagramPacket(cp.getBytes(), cp.getBytes().length, clientHost, clientPort);
          //cp.send(socket, InetAddress.getByName("localhost"), port);

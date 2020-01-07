@@ -29,12 +29,16 @@ public class ClientUdp {
     private static final int SOCKET_TIMEOUT = 2000; 
 
 
-    public static void main(String[] args) throws Exception {
-        String filename = "test1.txt";
-	    String filepath = "U:/RN/rnBeleg/Dateitransfer/bin/";
+    public static void main(String file_name, String host_adress, int host_port) throws Exception {
+        //String filename = "test3.txt";
+        String filename = file_name;
+	    String filepath = "U:/RN/rnBeleg/";
 
-        int port = 3333;
-        String host = "idefix.informatik.htw-dresden.de";
+        int port = host_port;
+        //int port = 1024;
+        String host = host_adress;
+        
+        //String host = "localhost";
 
         DatagramSocket socket = new DatagramSocket();
         socket.setSoTimeout(SOCKET_TIMEOUT);
@@ -78,7 +82,7 @@ public class ClientUdp {
         
         //sp.send(socket, serverAddress, port);
 
-        send_check(sp, socket, serverAddress, port,(byte) 0);
+        send_check(sp, socket, serverAddress, port, (byte) 0);
         //ByteBuffer buff_alldata = ByteBuffer.allocate(DataPackage.PAYLOAD_SIZE);
 
         // reading the file into buffer
@@ -100,6 +104,9 @@ public class ClientUdp {
         {
             remaining_bytes -= read;
             
+
+            System.out.println("bytes read: "+read);
+            System.out.println("bytes remaining: "+remaining_bytes);
             // allocate max PAYLOAD_SIZE bytes
             byte[] remaining_data = new byte[read];
             remaining_data = Arrays.copyOfRange(buffer, 0, read);
@@ -115,15 +122,16 @@ public class ClientUdp {
             if(lastPackage) {
                 // append crc
                 dp.setChecksum((int) crc.getValue());
-                
-
+                System.out.println("CRC Client: "+ ((int) crc.getValue()));
             }
-            System.out.println("CRC Client: "+ ((int) crc.getValue()));
+            
             ServerUdp.printArray(dp.getBytes());
             
             // try 10 times 
             if(!send_check(dp, socket, serverAddress, port, packageId))
                 exit_msg("Last try receiving correct ACK failed. Aborting");
+
+            System.out.println("bytes send: "+(fileLength - remaining_bytes));
             
             // update packageId
             packageId++;
