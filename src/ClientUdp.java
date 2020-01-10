@@ -29,16 +29,17 @@ public class ClientUdp {
     private static final int SOCKET_TIMEOUT = 2000; 
 
 
-    public static void main(String file_name, String host_adress, int host_port) throws Exception {
-        //String filename = "test3.txt";
-        String filename = file_name;
+    //public void main(String file_name, String host_adress, int host_port) throws Exception {
+    public static void main(String[] args) throws Exception {
+        String filename = args[0];
+        //String filename = file_name;
 	    String filepath = "U:/RN/rnBeleg/";
 
-        int port = host_port;
-        //int port = 1024;
-        String host = host_adress;
+        //int port = host_port;
+        int port = 3330;
+        //String host = host_adress;
         
-        //String host = "localhost";
+        String host = "idefix.informatik.htw-dresden.de";
 
         DatagramSocket socket = new DatagramSocket();
         socket.setSoTimeout(SOCKET_TIMEOUT);
@@ -63,18 +64,6 @@ public class ClientUdp {
 
         ServerUdp.printArray(sp.getBytes());
 
-        ByteBuffer buff = ByteBuffer.allocate(27);
-
-        // byteorder ala protocoll
-        buff.putShort((short)1);
-        buff.put((byte)0);
-        buff.put(StartPackage.marker.getBytes());
-        buff.putLong(fileLength);
-        buff.putShort(fileNameLength);
-        buff.put(filename.getBytes());
-
-        crc.update(buff.array());
-        System.out.println(crc.getValue());
         crc.reset();
 
         System.out.println(sp.calculateChecksum());

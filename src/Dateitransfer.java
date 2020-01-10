@@ -19,7 +19,7 @@ public class Dateitransfer
                 ClientUdp client = new ClientUdp(); 
 
                 try{
-                    client.main(server, args[1], 3333);
+                    //client.main(server, args[1], 3333);
                 }
                 catch(Exception e)
                 {

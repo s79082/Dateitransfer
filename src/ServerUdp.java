@@ -92,6 +92,8 @@ public class ServerUdp
 
       boolean lastPackage = false;
       boolean CRCcorrect = false;
+      
+      byte expected_pid = (byte) 1;
 
       // Processing loop.
       while(true){
@@ -149,9 +151,15 @@ public class ServerUdp
          
          //System.out.println(new String(Arrays.copyOfRange(tmp, 3, 3 + (int) datasize), "ASCII"));
 
-         byte ack = request.getData()[2];
+         byte pid = request.getData()[2];
+         byte send_ack;
+         if (pid != expected_pid)
+            send_ack = pid;    // send the 'wrong' PID as ACK
+         else
+            send_ack = expected_pid;
+            
          // send ACK
-         ConfirmationPackage cp = new ConfirmationPackage(ack);
+         ConfirmationPackage cp = new ConfirmationPackage(send_ack);
          System.out.println("received bytes: "+ actual_fileLegth);
          System.out.println("data: ");
          printArray(data);
