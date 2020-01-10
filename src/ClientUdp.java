@@ -47,44 +47,34 @@ public class ClientUdp {
         Checksum crc = new CRC32();
         long checksum;
       
-        // byte[] buffer = new byte[1024];
 
         // setting up input stream
-        //File file = new File("U:\\RN\\rnBeleg\\" + filename);
         File file = new File(filepath+ filename);
-
         FileInputStream fis = new FileInputStream(file);
-
         long fileLength = file.length();
-        System.out.println("filelegth: " + fileLength);
         short fileNameLength = (short) filename.length();
-
+        System.out.println("filelegth: " + fileLength);
+        
         // send start packet
+        // start package always has pid 0
         StartPackage sp = new StartPackage((byte) 0, filename.getBytes(), fileLength);
 
         ServerUdp.printArray(sp.getBytes());
 
         crc.reset();
 
-        System.out.println(sp.calculateChecksum());
-        //ServerUdp.printArray(sp.calculateChecksum().getBytes());
-        
-        //sp.send(socket, serverAddress, port);
-
         send_check(sp, socket, serverAddress, port, (byte) 0);
-        //ByteBuffer buff_alldata = ByteBuffer.allocate(DataPackage.PAYLOAD_SIZE);
-
-        // reading the file into buffer
-
-        // the amount of bytes still unused in buffer
-        //int remaining = buffer.length;
 
         byte[] buffer = new byte[DataPackage.PAYLOAD_SIZE];
 
         // the StartPackage.packageId is 0 so the first DataPackage has 1
         byte packageId = (byte) 1;
         boolean lastPackage;
+        
+        // bytes read, max payload size many
         int read;
+
+        // counts the bytes still to be read from file
         long remaining_bytes = fileLength;
 
         DataPackage dp;
@@ -92,18 +82,15 @@ public class ClientUdp {
         while((read = fis.read(buffer, 0, DataPackage.PAYLOAD_SIZE)) > -1)
         {
             remaining_bytes -= read;
-            
 
             System.out.println("bytes read: "+read);
             System.out.println("bytes remaining: "+remaining_bytes);
+
             // allocate max PAYLOAD_SIZE bytes
             byte[] remaining_data = new byte[read];
             remaining_data = Arrays.copyOfRange(buffer, 0, read);
-            //ByteBuffer tmp_buff = ByteBuffer.wrap(remaining_data);
 
             crc.update(remaining_data, 0, remaining_data.length);
-
-            //ServerUdp.printArray(remaining_data);
 
             lastPackage = (remaining_bytes == 0);
             dp = new DataPackage(packageId, remaining_data, lastPackage);
@@ -132,8 +119,8 @@ public class ClientUdp {
 
     public static void exit_msg(String msg) 
     {
-            System.out.println(msg);
-            System.exit(1);    
+        System.out.println(msg);
+        System.exit(1);    
     }
 
     // sends pack via socket to adress and port. Waits for a ConfirmationPackage and checks ACK with pid. Repeat 10 times
@@ -168,35 +155,13 @@ public class ClientUdp {
             }
             else
             {
-                System.out.println("try nr "+(n_try + 1)+ " failed: received incorrect ACK (expected: " + pid + ", received: "+received_pid + ")");
+                System.out.println("try nr "+(n_try + 1)+ " failed: received incorrect ACK (expected: " + pid + ", received: "+ received_pid + ")");
                 n_try++;
             }
         }
 
-        if (n_try >= 9)
-            return false;
-        return true;
+        return false;
 
-/*
-        int i;
-        for (i = 1; i <= 10; i++) 
-        {
-            pack.send(socket, adress, port);
-            // the ACK package is 3 bytes long
-            DatagramPacket response = new DatagramPacket(new byte[3], 3);
-            socket.receive(response);
-            System.out.println("Try: "+i);
-
-            // 1 byte ACK comes comes after 2 byte sessionId
-            if (response.getData()[2] == pid) 
-            {
-                // correct ACK was received
-                System.out.println("received correct ACK");
-                return true;
-            }
-        }
-        return false;    
-        */
     }
 }
    

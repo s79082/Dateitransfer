@@ -88,8 +88,6 @@ public class ServerUdp
 
       System.out.println("filename: " + file_name);
 
-      
-
       boolean lastPackage = false;
       boolean CRCcorrect = false;
       
@@ -111,7 +109,6 @@ public class ServerUdp
 
             // this is the last Package to be received. It will have an 4 byte CRC
             datagramm_size += 4;
-
             lastPackage = true;
 
          }
@@ -121,6 +118,21 @@ public class ServerUdp
          datagramm_size += (int)(DATAPACKAGE_HEADER_SIZE + datasize);
 
          request = new DatagramPacket(new byte[datagramm_size], datagramm_size);
+
+         // before any further processing, we check the pid and sid of the data package
+         byte pid = request.getData()[2];
+         byte send_ack;
+         if (pid != expected_pid)
+         {
+            send_ack = pid;    // send the 'wrong' PID as ACK
+            // jump to next iteration (SW protocol)
+            // remaining_bytes will not be updated before a correct pid and sid are received
+            continue;   
+         }
+            
+         else
+            send_ack = expected_pid;
+
          remaining_bytes -= datasize;
 
          socket.receive(request);
@@ -129,11 +141,9 @@ public class ServerUdp
 
          // last parameter is exclusive
          byte[] data = Arrays.copyOfRange(tmp, (int) DATAPACKAGE_HEADER_SIZE, (int) (DATAPACKAGE_HEADER_SIZE + datasize));
-         //printArray(data);
-         //ByteBuffer tmp_buff = ByteBuffer.wrap(data);
          
+         // update the crc with the data array
          crc.update(data, 0, data.length);
-
 
          if (lastPackage){
             byte[] receivedCrc = Arrays.copyOfRange(tmp, (int)(DATAPACKAGE_HEADER_SIZE + datasize), (int)(datagramm_size));
@@ -141,22 +151,11 @@ public class ServerUdp
             CRCcorrect = (tmp_buff.getInt() == (int) crc.getValue());
             printArray(receivedCrc);   
             System.out.println(CRCcorrect);
-         }
-         // update the crc with the data array
-         
-         //if (lastPackage)
             System.out.println("CRC Server: "+((int) crc.getValue()));
+         }
+           
+         // TODO: this checking should be done before any data is read or processed
          
-
-         
-         //System.out.println(new String(Arrays.copyOfRange(tmp, 3, 3 + (int) datasize), "ASCII"));
-
-         byte pid = request.getData()[2];
-         byte send_ack;
-         if (pid != expected_pid)
-            send_ack = pid;    // send the 'wrong' PID as ACK
-         else
-            send_ack = expected_pid;
             
          // send ACK
          ConfirmationPackage cp = new ConfirmationPackage(send_ack);
