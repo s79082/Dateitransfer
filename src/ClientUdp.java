@@ -33,10 +33,10 @@ public class ClientUdp {
     public static void main(String[] args) throws Exception {
         String filename = args[0];
         //String filename = file_name;
-	    String filepath = "U:/RN/rnBeleg/";
+	    String filepath = "/user/profile/active/ia18/s79082/RN/rnBeleg/";
 
         //int port = host_port;
-        int port = 3330;
+        int port = 3333;
         //String host = host_adress;
         
         String host = "idefix.informatik.htw-dresden.de";
@@ -55,14 +55,15 @@ public class ClientUdp {
         short fileNameLength = (short) filename.length();
         System.out.println("filelegth: " + fileLength);
         
-        // send start packet
+        // create start package
         // start package always has pid 0
         StartPackage sp = new StartPackage((byte) 0, filename.getBytes(), fileLength);
 
         ServerUdp.printArray(sp.getBytes());
 
         crc.reset();
-
+        
+        // send start packet
         send_check(sp, socket, serverAddress, port, (byte) 0);
 
         byte[] buffer = new byte[DataPackage.PAYLOAD_SIZE];

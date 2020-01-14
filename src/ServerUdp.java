@@ -77,8 +77,8 @@ public class ServerUdp
 
       System.out.println("filenamelength: " + file_name_length);
 
+      // copy file name
       byte[] file_name_bytes = new byte[file_name_length];
-
       for (int idx = 18; idx < (18 + file_name_length); idx++){
          file_name_bytes[idx - 18] = data_buf.get(idx);
       }
@@ -153,8 +153,6 @@ public class ServerUdp
             System.out.println(CRCcorrect);
             System.out.println("CRC Server: "+((int) crc.getValue()));
          }
-           
-         // TODO: this checking should be done before any data is read or processed
          
             
          // send ACK
@@ -164,51 +162,22 @@ public class ServerUdp
          printArray(data);
          
             
-         
          DatagramPacket response = new DatagramPacket(cp.getBytes(), cp.getBytes().length, clientHost, clientPort);
          //cp.send(socket, InetAddress.getByName("localhost"), port);
          socket.send(response);
+         
+         // update next expected package id
+         expected_pid++;
+         expected_pid %= 2;
       }
 
       //socket.close();
    }
+   
    // helper to print byte arrays
    public static void printArray(byte[] bytes) throws UnsupportedEncodingException
    {
       System.out.println(Arrays.toString(bytes));
    }
 
-   /* 
-    * Print ping data to the standard output stream.
-    */
-   private static void printData(DatagramPacket request) throws Exception
-   {
-      // Obtain references to the packet's array of bytes.
-      byte[] buf = request.getData();
-
-      // Wrap the bytes in a byte array input stream,
-      // so that you can read the data as a stream of bytes.
-      ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-
-      // Wrap the byte array output stream in an input stream reader,
-      // so you can read the data as a stream of characters.
-      InputStreamReader isr = new InputStreamReader(bais);
-
-      // Wrap the input stream reader in a bufferred reader,
-      // so you can read the character data a line at a time.
-      // (A line is a sequence of chars terminated by any combination of \r and \n.) 
-      BufferedReader br = new BufferedReader(isr);
-
-      // The message data is contained in a single line, so read this line.
-      String line = br.readLine();
-
-      // Print host address and data received from it.
-      System.out.println(
-         "Received from " + 
-         request.getAddress().getHostAddress() + 
-         ": " +
-         new String(line) );
-   }
-
- 
 }
