@@ -18,7 +18,7 @@ public class ServerUdp
    private static final int AVERAGE_DELAY = 100;  // milliseconds
    public static final long DATAPACKAGE_HEADER_SIZE = 3;
 
-   public void main(String[] args) throws Exception
+   public static void main(String[] args) throws Exception
    {
 
       int port = 1024;
@@ -52,19 +52,7 @@ public class ServerUdp
       InetAddress clientHost = request.getAddress();
       int clientPort = request.getPort();
 
-      // ack start package
-      ConfirmationPackage confirm = new ConfirmationPackage((byte) 0);
-      confirm.send(socket, clientHost, clientPort);
-
-      Checksum crc = new CRC32();
-      crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, request.getData().length - Integer.BYTES)));
-      printArray(ByteBuffer.allocate(4).putInt((int) crc.getValue()).array());
-
-      crc.reset();
-
       data_buf = ByteBuffer.wrap(request.getData());
-
-      //fileLength = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 8, 8 + 8)).getLong();
 
       fileLength = data_buf.getLong(8);
 
@@ -72,10 +60,21 @@ public class ServerUdp
 
       long remaining_bytes = fileLength;
 
-      //file_name_length = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 16, 16 + 2)).getChar();
       file_name_length = data_buf.getChar(16);
 
       System.out.println("filenamelength: " + file_name_length);
+      // ack start package
+      ConfirmationPackage confirm = new ConfirmationPackage((byte) 0);
+      confirm.send(socket, clientHost, clientPort);
+
+      Checksum crc = new CRC32();
+      crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, Short.BYTES + Byte.BYTES + StartPackage.marker.length() 
+         + Long.BYTES + file_name_length)));
+      printArray(ByteBuffer.allocate(4).putInt((int) crc.getValue()).array());
+
+      crc.reset();
+
+      
 
       // copy file name
       byte[] file_name_bytes = new byte[file_name_length];
@@ -85,7 +84,11 @@ public class ServerUdp
       //data_buf.get(file_name_bytes, 0, file_name_length);
 
       file_name = new String(file_name_bytes, "UTF-8");
-
+      String new_file_name = "/user/profile/active/ia18/s79082/RN/rnBeleg/" + file_name.split("\\.")[0] + " 1.txt";
+      System.out.println(new_file_name);
+      File file = new File(new_file_name);
+      file.createNewFile();
+      FileOutputStream output = new FileOutputStream(file);
       System.out.println("filename: " + file_name);
 
       boolean lastPackage = false;
@@ -111,6 +114,8 @@ public class ServerUdp
             datagramm_size += 4;
             lastPackage = true;
 
+            System.out.println("last package received");
+
          }
          else
             datasize =  DataPackage.PAYLOAD_SIZE;
@@ -118,12 +123,14 @@ public class ServerUdp
          datagramm_size += (int)(DATAPACKAGE_HEADER_SIZE + datasize);
 
          request = new DatagramPacket(new byte[datagramm_size], datagramm_size);
-
+         socket.receive(request);
+         printArray(request.getData());
          // before any further processing, we check the pid and sid of the data package
          byte pid = request.getData()[2];
          byte send_ack;
          if (pid != expected_pid)
          {
+            System.out.println("received package id out of order (received: "+pid+", expected: "+expected_pid+")");
             send_ack = pid;    // send the 'wrong' PID as ACK
             // jump to next iteration (SW protocol)
             // remaining_bytes will not be updated before a correct pid and sid are received
@@ -135,7 +142,7 @@ public class ServerUdp
 
          remaining_bytes -= datasize;
 
-         socket.receive(request);
+         
          actual_fileLegth +=datasize;
          byte[] tmp = request.getData();
 
@@ -151,6 +158,8 @@ public class ServerUdp
             CRCcorrect = (tmp_buff.getInt() == (int) crc.getValue());
             printArray(receivedCrc);   
             System.out.println(CRCcorrect);
+            if (!CRCcorrect)
+               ClientUdp.exit_msg("wrong crc in last data package");
             System.out.println("CRC Server: "+((int) crc.getValue()));
          }
          
@@ -169,9 +178,15 @@ public class ServerUdp
          // update next expected package id
          expected_pid++;
          expected_pid %= 2;
-      }
 
-      //socket.close();
+         output.write(data);
+
+         if (lastPackage)
+            break;
+      }
+      output.close();
+      socket.close();
+      ClientUdp.exit_msg("File transfer complete");
    }
    
    // helper to print byte arrays

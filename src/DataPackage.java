@@ -34,7 +34,7 @@ public class DataPackage extends UdpPackage
     {
         
         byte[] tmp = new byte[this.getSize()];
-        System.out.println("datapackage size "+ this.size);
+        System.out.println("datapackage size "+ this.getSize());
 
         ByteBuffer buff = ByteBuffer.wrap(tmp);
 

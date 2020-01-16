@@ -35,11 +35,12 @@ public class ClientUdp {
         //String filename = file_name;
 	    String filepath = "/user/profile/active/ia18/s79082/RN/rnBeleg/";
 
-        //int port = host_port;
-        int port = 3333;
+        //int port = 3333;
+        int port = 1024;
         //String host = host_adress;
         
-        String host = "idefix.informatik.htw-dresden.de";
+        //String host = "idefix.informatik.htw-dresden.de";
+        String host = "localhost";
 
         DatagramSocket socket = new DatagramSocket();
         socket.setSoTimeout(SOCKET_TIMEOUT);
