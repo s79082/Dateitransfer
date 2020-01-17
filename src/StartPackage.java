@@ -52,6 +52,7 @@ public class StartPackage extends UdpPackage
         buff.put(this.fileName);
         buff.putInt(this.checksumValue);
 
+        System.out.println(buff.array().length);
         return buff.array();
 
     }

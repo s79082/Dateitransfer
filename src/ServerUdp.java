@@ -51,6 +51,7 @@ public class ServerUdp
       // calculate client data
       InetAddress clientHost = request.getAddress();
       int clientPort = request.getPort();
+      System.out.println(clientPort);
 
       System.out.println("Start package received!");
       System.out.println("Start package bytes:");
@@ -65,17 +66,34 @@ public class ServerUdp
       file_name_length = data_buf.getChar(16);
 
       System.out.println("filenamelength: " + file_name_length);
+      
+
+      final int crc_start_index = Short.BYTES + Byte.BYTES + StartPackage.marker.length() + Long.BYTES + Short.BYTES+ file_name_length;
+      Checksum crc = new CRC32();
+      //crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, crc_start_index)));
+      byte[] tmp_dat = Arrays.copyOfRange(request.getData(), 0, crc_start_index);
+
+      // calculate crc of start package
+      System.out.println(crc_start_index);
+      crc.update(ByteBuffer.wrap(tmp_dat));
+      ByteBuffer received_crc_bytes = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), crc_start_index , crc_start_index + Integer.BYTES ));
+      System.out.println("received crc bytes: ");
+      printArray(received_crc_bytes.array());
+      System.out.println("calculated server crc with: ");
+      printArray(tmp_dat);
+      int received_crc = received_crc_bytes.getInt();
+      //int received_crc = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), crc_start_index, crc_start_index + Integer.BYTES)).getInt();
+      if (received_crc == (int) crc.getValue())
+         System.out.println("received start package crc correct");
+      else
+         ClientUdp.exit_msg("received start package crc incorrect");
+      //printArray(ByteBuffer.allocate(4).putInt((int) crc.getValue()).array());
+      System.out.println(received_crc);
+      System.out.println((int) crc.getValue());
+
       // ack start package
       ConfirmationPackage confirm = new ConfirmationPackage((byte) 0);
       confirm.send(socket, clientHost, clientPort);
-
-      final int crc_start_index = Short.BYTES + Byte.BYTES + StartPackage.marker.length() + Long.BYTES + file_name_length;
-      Checksum crc = new CRC32();
-      crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, crc_start_index)));
-      int received_crc = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), crc_start_index, crc_start_index + Integer.BYTES)).getInt();
-      if (received_crc == (int) crc.getValue())
-         System.out.println("received start package crc correct");
-      printArray(ByteBuffer.allocate(4).putInt((int) crc.getValue()).array());
 
       crc.reset();
 

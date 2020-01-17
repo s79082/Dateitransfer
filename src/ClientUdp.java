@@ -36,22 +36,20 @@ public class ClientUdp {
         //String filename = file_name;
 	    String filepath = "/user/profile/active/ia18/s79082/RN/rnBeleg/";
 
-        int port = 3333;
-        //int port = 1024;
+        //int port = 3333;
+        int port = 1024;
         //String host = host_adress;
         
-        String host = "idefix.informatik.htw-dresden.de";
-        //String host = "localhost";
+        //String host = "idefix.informatik.htw-dresden.de";
+        String host = "localhost";
         System.out.println(FileSystems.getDefault().getPath("test1.txt").toAbsolutePath().toString());
         DatagramSocket socket = new DatagramSocket();
         socket.setSoTimeout(SOCKET_TIMEOUT);
         InetAddress serverAddress = InetAddress.getByName(host);
-        Checksum crc = new CRC32();
-        long checksum;
-      
+        Checksum crc = new CRC32();      
 
         // setting up input stream
-        File file = new File(filepath+ filename);
+        File file = new File(filepath + filename);
         FileInputStream fis = new FileInputStream(file);
         long fileLength = file.length();
         short fileNameLength = (short) filename.length();
@@ -60,7 +58,7 @@ public class ClientUdp {
         // create start package
         // start package always has pid 0
         StartPackage sp = new StartPackage((byte) 0, filename.getBytes(), fileLength);
-
+        
         ServerUdp.printArray(sp.getBytes());
 
         crc.reset();
