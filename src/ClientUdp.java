@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 import java.io.File;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 
 import java.nio.file.Path;
@@ -35,13 +36,13 @@ public class ClientUdp {
         //String filename = file_name;
 	    String filepath = "/user/profile/active/ia18/s79082/RN/rnBeleg/";
 
-        //int port = 3333;
-        int port = 1024;
+        int port = 3333;
+        //int port = 1024;
         //String host = host_adress;
         
-        //String host = "idefix.informatik.htw-dresden.de";
-        String host = "localhost";
-
+        String host = "idefix.informatik.htw-dresden.de";
+        //String host = "localhost";
+        System.out.println(FileSystems.getDefault().getPath("test1.txt").toAbsolutePath().toString());
         DatagramSocket socket = new DatagramSocket();
         socket.setSoTimeout(SOCKET_TIMEOUT);
         InetAddress serverAddress = InetAddress.getByName(host);

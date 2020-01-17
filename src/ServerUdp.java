@@ -1,8 +1,11 @@
 //package rnBeleg;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.util.*;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
@@ -38,27 +41,26 @@ public class ServerUdp
 
          socket.receive(request);
 
-         // the token START is at position 3 five bytes long
+         // the token 'Start' is at position 3 five bytes long
          supposedStartToken = new String(Arrays.copyOfRange(request.getData(), 3, 3 + 5), "UTF-8");
 
       }
       // repeat until startpackage received
       while(!supposedStartToken.equals(StartPackage.marker));
-      System.out.println("Start package received!");
-      System.out.println("Start package bytes:");
-      printArray(request.getData());
 
       // calculate client data
       InetAddress clientHost = request.getAddress();
       int clientPort = request.getPort();
+
+      System.out.println("Start package received!");
+      System.out.println("Start package bytes:");
+      printArray(request.getData());
 
       data_buf = ByteBuffer.wrap(request.getData());
 
       fileLength = data_buf.getLong(8);
 
       System.out.println("filelength: " + fileLength);
-
-      long remaining_bytes = fileLength;
 
       file_name_length = data_buf.getChar(16);
 
@@ -67,29 +69,45 @@ public class ServerUdp
       ConfirmationPackage confirm = new ConfirmationPackage((byte) 0);
       confirm.send(socket, clientHost, clientPort);
 
+      final int crc_start_index = Short.BYTES + Byte.BYTES + StartPackage.marker.length() + Long.BYTES + file_name_length;
       Checksum crc = new CRC32();
-      crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, Short.BYTES + Byte.BYTES + StartPackage.marker.length() 
-         + Long.BYTES + file_name_length)));
+      crc.update(ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), 0, crc_start_index)));
+      int received_crc = ByteBuffer.wrap(Arrays.copyOfRange(request.getData(), crc_start_index, crc_start_index + Integer.BYTES)).getInt();
+      if (received_crc == (int) crc.getValue())
+         System.out.println("received start package crc correct");
       printArray(ByteBuffer.allocate(4).putInt((int) crc.getValue()).array());
 
       crc.reset();
-
-      
 
       // copy file name
       byte[] file_name_bytes = new byte[file_name_length];
       for (int idx = 18; idx < (18 + file_name_length); idx++){
          file_name_bytes[idx - 18] = data_buf.get(idx);
       }
-      //data_buf.get(file_name_bytes, 0, file_name_length);
 
       file_name = new String(file_name_bytes, "UTF-8");
-      String new_file_name = "/user/profile/active/ia18/s79082/RN/rnBeleg/" + file_name.split("\\.")[0] + " 1.txt";
-      System.out.println(new_file_name);
-      File file = new File(new_file_name);
+
+      //data_buf.get(file_name_bytes, 0, file_name_length);
+      File file;
+      Path file_path = FileSystems.getDefault().getPath("").toAbsolutePath();
+      String new_file_name = file_name;
+      Integer i = 0;
+
+      // create new file name
+      do {
+         file = new File(new_file_name);
+         i++;
+         new_file_name = new_file_name.concat(i.toString());
+      }while(file.exists());
+
+      // create file and stream
       file.createNewFile();
       FileOutputStream output = new FileOutputStream(file);
+      
       System.out.println("filename: " + file_name);
+      System.out.println("created file " + new_file_name);
+
+      long remaining_bytes = fileLength;
 
       boolean lastPackage = false;
       boolean CRCcorrect = false;
@@ -141,9 +159,8 @@ public class ServerUdp
             send_ack = expected_pid;
 
          remaining_bytes -= datasize;
-
+         actual_fileLegth += datasize;
          
-         actual_fileLegth +=datasize;
          byte[] tmp = request.getData();
 
          // last parameter is exclusive
